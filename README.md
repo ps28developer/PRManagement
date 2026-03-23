@@ -28,5 +28,6 @@ npm run dev
 - **Dual Approval Workflow**: PRs require both Peer and Lead Developer approval.
 - **Dynamic Dashboards**: Role-based views for Admins, Employees, and Leads.
 - **PR Tracking**: Real-time status updates (Pending, Peer Approved, Lead Approved, etc.).
-- **Review History**: lead developers can track their past approvals.
+- **Review History**: Both Lead Developers and Peer Reviewers can track their past approvals and findings directly in the dashboard.
+- **Premium UI**: Refined, glassmorphism-inspired findings list with severity-based color-coding and improved readability.
 - **Analytics**: Admin insights into PR status and findings severity.
