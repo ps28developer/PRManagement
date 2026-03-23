@@ -20,6 +20,14 @@ npm install
 npm run dev
 ```
 
+### 🔑 Default Credentials (After Seeding)
+- **Role**: Admin
+- **Email**: `admin@example.com`
+- **Password**: `adminpassword123`
+
+> [!NOTE]
+> You can create additional Employees and Lead Developers through the Admin Dashboard after logging in.
+
 ## 🏗️ Architecture
 - **Frontend**: React (Vite), Axios, Recharts (Analytics), Vanilla CSS.
 - **Backend**: Node.js, Express, Mongoose (MongoDB), JWT Authentication.
