@@ -12,9 +12,22 @@ const AdminDashboard = () => {
     setActiveTab(tab || 'analytics');
   }, [tab]);
   const [analytics, setAnalytics] = useState(null);
+  const [expandedPrId, setExpandedPrId] = useState(null);
   const [users, setUsers] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [prs, setPrs] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Filters
+  const [filters, setFilters] = useState({
+    status: '',
+    projectId: '',
+    employeeId: '',
+    startDate: '',
+    endDate: '',
+    sortBy: 'timestamps.created',
+    order: 'desc'
+  });
 
   // Form states
   const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'Employee' });
@@ -22,7 +35,7 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchData();
-  }, [activeTab]);
+  }, [activeTab, filters]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -36,6 +49,15 @@ const AdminDashboard = () => {
       } else if (activeTab === 'projects') {
         const res = await api.get('/admin/projects');
         setProjects(res.data);
+      } else if (activeTab === 'reports') {
+        const [uRes, pRes, prRes] = await Promise.all([
+          api.get('/admin/users'),
+          api.get('/admin/projects'),
+          api.get('/admin/prs', { params: filters })
+        ]);
+        setUsers(uRes.data);
+        setProjects(pRes.data);
+        setPrs(prRes.data);
       }
     } catch (error) {
       console.error(error);
@@ -64,6 +86,7 @@ const AdminDashboard = () => {
         <button className={`btn ${activeTab === 'analytics' ? 'btn-primary' : ''}`} onClick={() => setActiveTab('analytics')} style={{ width: 'auto' }}>Analytics</button>
         <button className={`btn ${activeTab === 'users' ? 'btn-primary' : ''}`} onClick={() => setActiveTab('users')} style={{ width: 'auto' }}>Manage Users</button>
         <button className={`btn ${activeTab === 'projects' ? 'btn-primary' : ''}`} onClick={() => setActiveTab('projects')} style={{ width: 'auto' }}>Manage Projects</button>
+        <button className={`btn ${activeTab === 'reports' ? 'btn-primary' : ''}`} onClick={() => setActiveTab('reports')} style={{ width: 'auto' }}>Reports</button>
       </div>
 
       {loading ? <div>Loading...</div> : (
@@ -168,6 +191,166 @@ const AdminDashboard = () => {
                     </p>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+          {activeTab === 'reports' && (
+            <div className="grid" style={{ gridTemplateColumns: '1fr' }}>
+              <div className="card" style={{ marginBottom: '1.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                  {/* Row 1: Project, Employee, Status */}
+                  <div className="form-group">
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Project</label>
+                    <select value={filters.projectId} onChange={e => setFilters({...filters, projectId: e.target.value})} style={{ width: '100%', margin: 0 }}>
+                      <option value="">All Projects</option>
+                      {projects.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Employee</label>
+                    <select value={filters.employeeId} onChange={e => setFilters({...filters, employeeId: e.target.value})} style={{ width: '100%', margin: 0 }}>
+                      <option value="">All Employees</option>
+                      {users.filter(u => u.role === 'Employee').map(u => <option key={u._id} value={u._id}>{u.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Status</label>
+                    <select value={filters.status} onChange={e => setFilters({...filters, status: e.target.value})} style={{ width: '100%', margin: 0 }}>
+                      <option value="">All Status</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Approved">Approved</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                  {/* Row 2: Dates */}
+                  <div className="form-group">
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Start Date</label>
+                    <input type="date" value={filters.startDate} onChange={e => setFilters({...filters, startDate: e.target.value})} style={{ width: '100%', margin: 0 }} />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>End Date</label>
+                    <input type="date" value={filters.endDate} onChange={e => setFilters({...filters, endDate: e.target.value})} style={{ width: '100%', margin: 0 }} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="card">
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                      <th style={{ padding: '1rem 0.5rem', cursor: 'pointer' }} onClick={() => setFilters({...filters, sortBy: 'employee.name', order: filters.order === 'asc' ? 'desc' : 'asc'})}>
+                        Employee {filters.sortBy === 'employee.name' && (filters.order === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th style={{ cursor: 'pointer' }} onClick={() => setFilters({...filters, sortBy: 'project.name', order: filters.order === 'asc' ? 'desc' : 'asc'})}>
+                        Project {filters.sortBy === 'project.name' && (filters.order === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th>PR Details</th>
+                      <th>Peer Reviewer</th>
+                      <th>Lead Developer</th>
+                      <th style={{ minWidth: '120px' }}>Work Dates</th>
+                      <th style={{ cursor: 'pointer' }} onClick={() => setFilters({...filters, sortBy: 'rejectionCount', order: filters.order === 'asc' ? 'desc' : 'asc'})}>
+                        Rejections {filters.sortBy === 'rejectionCount' && (filters.order === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(() => {
+                      let lastProject = null;
+                      return prs.map(pr => {
+                        const showHeader = pr.project?.name !== lastProject;
+                        lastProject = pr.project?.name;
+                        return (
+                          <React.Fragment key={pr._id}>
+                            {showHeader && (
+                              <tr style={{ background: 'rgba(99, 102, 241, 0.05)' }}>
+                                <td colSpan="8" style={{ padding: '0.75rem 0.5rem', fontWeight: '800', fontSize: '0.8rem', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                   {pr.project?.name || 'No Project'}
+                                </td>
+                              </tr>
+                            )}
+                            <tr style={{ borderBottom: '1px solid var(--border)', fontSize: '0.9rem' }}>
+                              <td style={{ padding: '1rem 0.5rem' }}>
+                                <div style={{ fontWeight: '600' }}>{pr.employee?.name}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{pr.employee?.email}</div>
+                              </td>
+                              <td>{pr.project?.name}</td>
+                                <td>
+                                  <div style={{ fontWeight: '600' }}>{pr.title}</div>
+                                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{pr.taskName} | {pr.moduleName}</div>
+                                  <a href={pr.prLink} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.7rem', color: 'var(--primary)', textDecoration: 'underline' }}>View GitHub PR</a>
+                                </td>
+                                <td>{pr.peerReviewer?.name || 'N/A'}</td>
+                                <td>{pr.leadDeveloper?.name || 'N/A'}</td>
+                                <td style={{ fontSize: '0.8rem' }}>
+                                  <div style={{ color: 'var(--success)' }}>Start: {pr.startDate ? new Date(pr.startDate).toLocaleDateString() : 'N/A'}</div>
+                                  <div style={{ color: 'var(--danger)' }}>End: {pr.endDate ? new Date(pr.endDate).toLocaleDateString() : 'N/A'}</div>
+                                </td>
+                                <td style={{ padding: '1rem 0.5rem', textAlign: 'center' }}>
+                                  <span 
+                                    onClick={() => setExpandedPrId(expandedPrId === pr._id ? null : pr._id)}
+                                    style={{ 
+                                      cursor: 'pointer',
+                                      background: pr.rejectionCount > 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255,255,255,0.05)',
+                                      padding: '0.2rem 0.5rem',
+                                      borderRadius: '0.25rem',
+                                      color: pr.rejectionCount > 0 ? '#ef4444' : 'var(--text-muted)',
+                                      fontSize: '0.75rem',
+                                      fontWeight: '700',
+                                      display: 'inline-flex',
+                                      flexDirection: 'column',
+                                      alignItems: 'center'
+                                    }}>
+                                    {pr.rejectionCount || 0}
+                                    {pr.rejectionCount > 0 && <span style={{ fontSize: '0.6rem', textDecoration: 'underline', marginTop: '2px' }}>{expandedPrId === pr._id ? 'Hide' : 'View'}</span>}
+                                  </span>
+                                </td>
+                              <td>
+                                <span style={{ 
+                                  padding: '0.25rem 0.75rem', 
+                                  borderRadius: '1rem', 
+                                  fontSize: '0.7rem',
+                                  fontWeight: '600',
+                                  background: pr.status === 'Approved' ? 'var(--success)' : pr.status === 'Rejected' ? 'var(--danger)' : 'var(--warning)',
+                                  color: 'white'
+                                }}>{pr.status}</span>
+                              </td>
+                            </tr>
+                            {expandedPrId === pr._id && pr.findings && pr.findings.length > 0 && (
+                                <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
+                                  <td colSpan="8" style={{ padding: '1.5rem' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+                                      {pr.findings.map((f, i) => (
+                                        <div key={i} style={{ 
+                                          background: 'var(--card-bg)', 
+                                          padding: '1rem', 
+                                          borderRadius: '0.5rem', 
+                                          border: '1px solid var(--border)',
+                                          borderLeft: `4px solid ${f.severity === 'Critical' ? '#ef4444' : f.severity === 'High' ? '#f97316' : '#facc15'}`
+                                        }}>
+                                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                            <span style={{ fontSize: '0.65rem', fontWeight: '800', color: f.severity === 'Critical' ? '#ef4444' : f.severity === 'High' ? '#f97316' : '#facc15' }}>{f.severity.toUpperCase()}</span>
+                                            <span style={{ fontSize: '0.65rem', color: f.status === 'Fixed' ? 'var(--success)' : 'var(--warning)', fontWeight: '700' }}>{f.status || 'OPEN'}</span>
+                                          </div>
+                                          <p style={{ fontSize: '0.85rem', marginBottom: '0.5rem' }}>{f.description}</p>
+                                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0.4rem' }}>
+                                            By <b>{f.reviewer?.name}</b> ({f.reviewer?.role})
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                          </React.Fragment>
+                        );
+                      });
+                    })()}
+                  </tbody>
+                </table>
+                {prs.length === 0 && <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>No PRs found matching criteria.</p>}
               </div>
             </div>
           )}

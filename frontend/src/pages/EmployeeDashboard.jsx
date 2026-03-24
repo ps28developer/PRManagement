@@ -12,6 +12,7 @@ const EmployeeDashboard = () => {
   const [projects, setProjects] = useState([]);
   const [users, setUsers] = useState([]);
   const [showSubmit, setShowSubmit] = useState(action === 'submit');
+  const [activeTab, setActiveTab] = useState('pending');
 
   useEffect(() => {
     setShowSubmit(action === 'submit');
@@ -142,7 +143,7 @@ const EmployeeDashboard = () => {
             </form>
           ) : (
             <div className="empty-state" style={{ padding: '2rem' }}>
-              <div className="empty-icon">📂</div>
+              <div className="empty-icon"></div>
               <div className="empty-title">No Projects Available</div>
               <p className="empty-description">
                 There are no projects assigned to you yet. Please contact your system administrator.
@@ -152,16 +153,43 @@ const EmployeeDashboard = () => {
         </div>
       ) : (
         <>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
             <h3>My Pull Requests</h3>
             <button onClick={() => navigate('/employee/submit')} className="btn btn-primary" style={{ width: 'auto' }}>
               Raise PR
             </button>
           </div>
 
+          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+            <button 
+              onClick={() => setActiveTab('pending')} 
+              className="btn"
+              style={{ 
+                background: activeTab === 'pending' ? 'var(--primary)' : 'transparent',
+                border: '1px solid var(--primary)',
+                color: activeTab === 'pending' ? 'white' : 'var(--text-muted)',
+                flex: 1
+              }}
+            >
+              Pending PRs
+            </button>
+            <button 
+              onClick={() => setActiveTab('approved')} 
+              className="btn"
+              style={{ 
+                background: activeTab === 'approved' ? 'var(--primary)' : 'transparent',
+                border: '1px solid var(--primary)',
+                color: activeTab === 'approved' ? 'white' : 'var(--text-muted)',
+                flex: 1
+              }}
+            >
+              Approved PRs
+            </button>
+          </div>
+
           <div className="grid">
-            {prs.length > 0 ? (
-              prs.map(pr => (
+            {prs.filter(pr => activeTab === 'pending' ? !['Approved', 'Merged', 'Rejected'].includes(pr.status) : pr.status === 'Approved').length > 0 ? (
+              prs.filter(pr => activeTab === 'pending' ? !['Approved', 'Merged', 'Rejected'].includes(pr.status) : pr.status === 'Approved').map(pr => (
                 <div key={pr._id} className="card">
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <div>
@@ -187,6 +215,11 @@ const EmployeeDashboard = () => {
                        pr.status === 'Lead Approved' ? 'Peer Review Pending' : 
                        pr.status}
                     </span>
+                  </div>
+
+                  <div style={{ marginTop: '0.75rem', display: 'flex', gap: '1rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    <span><b>Start:</b> {pr.startDate ? new Date(pr.startDate).toLocaleDateString() : 'N/A'}</span>
+                    <span><b>End:</b> {pr.endDate ? new Date(pr.endDate).toLocaleDateString() : 'N/A'}</span>
                   </div>
                   
                   {pr.findings && pr.findings.length > 0 && (
@@ -215,7 +248,20 @@ const EmployeeDashboard = () => {
                                 color: f.severity === 'Critical' ? '#ef4444' : f.severity === 'High' ? '#f97316' : '#facc15',
                                 letterSpacing: '0.05em'
                               }}>{f.severity}</span>
+                              <span style={{ 
+                                fontSize: '0.65rem', 
+                                fontWeight: '800', 
+                                textTransform: 'uppercase', 
+                                padding: '0.1rem 0.4rem', 
+                                borderRadius: '0.25rem',
+                                background: f.status === 'Fixed' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                                color: f.status === 'Fixed' ? 'var(--success)' : 'var(--warning)',
+                                letterSpacing: '0.05em'
+                              }}>{f.status || 'Open'}</span>
                             </div>
+                            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                              By <span style={{ color: 'var(--primary)', fontWeight: '600' }}>{f.reviewer?.name}</span> ({f.reviewer?.role})
+                            </p>
                             <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.9)', lineHeight: '1.4', margin: 0 }}>{f.description}</p>
                           </div>
                         ))}
@@ -233,9 +279,13 @@ const EmployeeDashboard = () => {
               ))
             ) : (
               <div className="empty-state" style={{ gridColumn: 'span 2' }}>
-                <div className="empty-icon">📝</div>
-                <div className="empty-title">No PRs Found</div>
-                <p className="empty-description">You haven't submitted any pull requests yet. Click "Raise PR" to get started.</p>
+                <div className="empty-icon">{activeTab === 'pending' ? '📝' : '✅'}</div>
+                <div className="empty-title">No {activeTab} PRs Found</div>
+                <p className="empty-description">
+                  {activeTab === 'pending' 
+                    ? "You haven't submitted any pull requests yet. Click \"Raise PR\" to get started."
+                    : "You don't have any approved pull requests yet. Good luck with your current reviews!"}
+                </p>
               </div>
             )}
           </div>

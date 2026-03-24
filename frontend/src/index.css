@@ -103,15 +103,7 @@ select {
   color: var(--text);
 }
 
-input {
-  width: 100%;
-  padding: 0.75rem;
-  margin-bottom: 1rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--border);
-  background: #0f172a;
-  color: white;
-}
+
 
 .dashboard-container {
   padding: 2rem;

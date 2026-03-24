@@ -64,7 +64,7 @@ const Layout = ({ children }) => {
         </div>
       </div>
       <div className="main-content" style={{ flex: 1 }}>
-        <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <header style={{ marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2>Welcome, {user.name}</h2>
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <div style={{ width: '40px', height: '40px', background: 'var(--primary)', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>

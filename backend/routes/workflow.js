@@ -10,6 +10,7 @@ router.post('/submit', auth, authorize('Employee'), async (req, res) => {
     const pr = new PR({
       ...req.body,
       title: req.body.title || req.body.taskName,
+      startDate: Date.now(),
       employee: req.user._id,
       status: 'Pending'
     });
@@ -23,7 +24,7 @@ router.post('/submit', auth, authorize('Employee'), async (req, res) => {
 // Get PRs submitted by the user
 router.get('/my-prs', auth, async (req, res) => {
   try {
-    const prs = await PR.find({ employee: req.user._id }).populate('employee peerReviewer leadDeveloper project');
+    const prs = await PR.find({ employee: req.user._id }).populate('employee peerReviewer leadDeveloper project findings.reviewer');
     res.send(prs);
   } catch (error) {
     res.status(500).send(error);
@@ -38,7 +39,7 @@ router.get('/assigned-prs', auth, async (req, res) => {
       $or: [{ peerReviewer: req.user._id }, { leadDeveloper: req.user._id }],
       status: { $nin: ['Approved', 'Merged', 'Rejected'] }
     };
-    const prs = await PR.find(query).populate('employee peerReviewer leadDeveloper project');
+    const prs = await PR.find(query).populate('employee peerReviewer leadDeveloper project findings.reviewer');
     console.log('Found PRs:', prs.length);
     res.send(prs);
   } catch (error) {
@@ -54,7 +55,7 @@ router.get('/assigned-history', auth, async (req, res) => {
       $or: [{ peerReviewer: req.user._id }, { leadDeveloper: req.user._id }],
       status: { $in: ['Approved', 'Merged', 'Rejected'] }
     };
-    const prs = await PR.find(query).populate('employee peerReviewer leadDeveloper project').sort({ 'timestamps.created': -1 });
+    const prs = await PR.find(query).populate('employee peerReviewer leadDeveloper project findings.reviewer').sort({ 'timestamps.created': -1 });
     res.send(prs);
   } catch (error) {
     res.status(500).send(error);
@@ -83,6 +84,7 @@ router.post('/review/:id', auth, authorize(['Employee', 'Lead Developer']), asyn
         pr.timestamps.peerReviewed = Date.now();
         if (pr.timestamps.leadReviewed) {
           pr.status = 'Approved';
+          pr.endDate = Date.now();
         } else {
           pr.status = 'Peer Approved';
         }
@@ -90,6 +92,7 @@ router.post('/review/:id', auth, authorize(['Employee', 'Lead Developer']), asyn
         pr.timestamps.leadReviewed = Date.now();
         if (pr.timestamps.peerReviewed) {
           pr.status = 'Approved';
+          pr.endDate = Date.now();
         } else {
           pr.status = 'Lead Approved';
         }
@@ -110,6 +113,10 @@ router.patch('/update/:id', auth, authorize('Employee'), async (req, res) => {
     if (!pr) return res.status(404).send();
 
     pr.status = 'Pending'; // Resubmit
+    // Mark all existing findings as Fixed on resubmit
+    pr.findings.forEach(f => {
+      if (f.status === 'Open') f.status = 'Fixed';
+    });
     await pr.save();
     res.send(pr);
   } catch (error) {

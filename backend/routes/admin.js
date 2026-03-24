@@ -68,6 +68,65 @@ router.post('/projects', auth, authorize('Admin'), async (req, res) => {
   }
 });
 
+// Get all PRs for management
+router.get('/prs', auth, authorize('Admin'), async (req, res) => {
+  try {
+    const { status, search, startDate, endDate, projectId, employeeId, sortBy, order = 'desc' } = req.query;
+    let query = {};
+
+    if (status) query.status = status;
+    if (projectId) query.project = projectId;
+    if (employeeId) query.employee = employeeId;
+    if (startDate) query.startDate = { $gte: new Date(startDate) };
+    if (endDate) query.endDate = { $lte: new Date(endDate) };
+
+    const { subStart, subEnd } = req.query;
+    if (subStart || subEnd) {
+      query.timestamps = {};
+      if (subStart) query['timestamps.created'] = { $gte: new Date(subStart) };
+      if (subEnd) query['timestamps.created'] = { ...query['timestamps.created'], $lte: new Date(subEnd) };
+    }
+
+    let prs = await PR.find(query)
+      .populate('employee project peerReviewer leadDeveloper findings.reviewer')
+      .sort({ [sortBy || 'timestamps.created']: order === 'desc' ? -1 : 1 });
+
+    if (search) {
+      const searchRegex = new RegExp(search, 'i');
+      prs = prs.filter(pr => 
+        searchRegex.test(pr.employee?.name) || 
+        searchRegex.test(pr.project?.name) ||
+        searchRegex.test(pr.title) ||
+        searchRegex.test(pr.taskName)
+      );
+    }
+
+    res.send(prs);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+// Admin direct PR action
+router.patch('/prs/:id', auth, authorize('Admin'), async (req, res) => {
+  try {
+    const { status } = req.body;
+    const pr = await PR.findById(req.params.id);
+    if (!pr) return res.status(404).send();
+
+    pr.status = status;
+    if (status === 'Approved') {
+      pr.timestamps.peerReviewed = Date.now();
+      pr.timestamps.leadReviewed = Date.now();
+    }
+    
+    await pr.save();
+    res.send(pr);
+  } catch (error) {
+    res.status(400).send(error);
+  }
+});
+
 // Admin Analytics
 router.get('/analytics', auth, authorize('Admin'), async (req, res) => {
   try {

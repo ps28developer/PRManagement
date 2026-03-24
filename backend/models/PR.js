@@ -5,6 +5,8 @@ const prSchema = new mongoose.Schema({
   prLink: { type: String, required: true },
   moduleName: { type: String, required: true },
   taskName: { type: String, required: true },
+  startDate: { type: Date },
+  endDate: { type: Date },
   employee: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
@@ -37,6 +39,7 @@ const prSchema = new mongoose.Schema({
       description: { type: String },
       severity: { type: String, enum: ["Low", "Medium", "High", "Critical"] },
       reviewer: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      status: { type: String, enum: ["Open", "Fixed"], default: "Open" },
       createdAt: { type: Date, default: Date.now },
     },
   ],

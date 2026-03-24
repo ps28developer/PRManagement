@@ -48,8 +48,8 @@ const ReviewDashboard = () => {
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: selectedPr ? '1fr 1fr' : '1fr', gap: '1.5rem' }}>
-      <div className="grid">
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignSelf: 'start' }}>
+        <div style={{ display: 'flex', gap: '1rem' }}>
           <button 
             onClick={() => { setActiveTab('pending'); setSelectedPr(null); }} 
             className="btn"
@@ -76,16 +76,20 @@ const ReviewDashboard = () => {
 
         {prs.map(pr => (
           <div key={pr._id} className="card" onClick={() => setSelectedPr(pr)} 
-            style={{ cursor: 'pointer', border: selectedPr?._id === pr._id ? '1px solid var(--primary)' : '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+            style={{ cursor: 'pointer', border: selectedPr?._id === pr._id ? '1px solid var(--primary)' : '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
              <div>
                 <h4 style={{ color: 'var(--primary)', marginBottom: '0.25rem' }}>{pr.title || pr.taskName}</h4>
                 <p style={{ fontSize: '0.8rem', marginBottom: '0.5rem' }}>Submitted by: <span style={{ color: 'var(--text)' }}>{pr.employee?.name}</span></p>
                 <a href={pr.prLink} target="_blank" rel="noopener noreferrer" 
-                  style={{ color: 'var(--primary)', fontSize: '0.8rem', textDecoration: 'underline' }}
+                  style={{ color: 'var(--primary)', fontSize: '0.8rem', textDecoration: 'underline', display: 'block', marginBottom: '0.5rem' }}
                   onClick={(e) => e.stopPropagation()}
                 >
                   View PR Link
                 </a>
+                <div style={{ display: 'flex', gap: '1rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                  <span><b>Start:</b> {pr.startDate ? new Date(pr.startDate).toLocaleDateString() : 'N/A'}</span>
+                  <span><b>End:</b> {pr.endDate ? new Date(pr.endDate).toLocaleDateString() : 'N/A'}</span>
+                </div>
                 
                 {pr.findings && pr.findings.length > 0 && (
                   <div style={{ marginTop: '1.25rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1.25rem' }}>
@@ -96,7 +100,7 @@ const ReviewDashboard = () => {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                       {pr.findings.map((f, i) => (
                         <div key={i} style={{ 
-                          background: 'rgba(255,255,255,0.03)', 
+                          background: 'rgba(255,255,255,0.03)',
                           padding: '0.75rem', 
                           borderRadius: '0.5rem', 
                           borderLeft: `4px solid ${f.severity === 'Critical' ? '#ef4444' : f.severity === 'High' ? '#f97316' : '#facc15'}`,
@@ -113,7 +117,20 @@ const ReviewDashboard = () => {
                               color: f.severity === 'Critical' ? '#ef4444' : f.severity === 'High' ? '#f97316' : '#facc15',
                               letterSpacing: '0.05em'
                             }}>{f.severity}</span>
+                            <span style={{ 
+                                fontSize: '0.65rem', 
+                                fontWeight: '800', 
+                                textTransform: 'uppercase', 
+                                padding: '0.1rem 0.4rem', 
+                                borderRadius: '0.25rem',
+                                background: f.status === 'Fixed' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                                color: f.status === 'Fixed' ? 'var(--success)' : 'var(--warning)',
+                                letterSpacing: '0.05em'
+                              }}>{f.status || 'Open'}</span>
                           </div>
+                          <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
+                            By <span style={{ color: 'var(--primary)', fontWeight: '600' }}>{f.reviewer?.name}</span> ({f.reviewer?.role})
+                          </p>
                           <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.9)', lineHeight: '1.4', margin: 0 }}>{f.description}</p>
                         </div>
                       ))}
@@ -142,7 +159,7 @@ const ReviewDashboard = () => {
       </div>
 
       {selectedPr && (
-        <div className="card">
+        <div className="card" style={{ alignSelf: 'start' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
             <h3 style={{ margin: 0 }}>{activeTab === 'pending' ? 'Review' : 'Review Details'}: {selectedPr.title || selectedPr.taskName}</h3>
             <button onClick={() => setSelectedPr(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>✕</button>
@@ -204,10 +221,24 @@ const ReviewDashboard = () => {
                         background: f.severity === 'Critical' ? 'var(--danger)' : f.severity === 'High' ? '#f97316' : '#3b82f6',
                         color: 'white'
                       }}>{f.severity}</span>
+                      <span style={{ 
+                        fontSize: '0.65rem', 
+                        fontWeight: '800', 
+                        textTransform: 'uppercase', 
+                        padding: '0.1rem 0.4rem', 
+                        borderRadius: '0.25rem',
+                        background: f.status === 'Fixed' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                        color: f.status === 'Fixed' ? 'var(--success)' : 'var(--warning)',
+                        letterSpacing: '0.05em',
+                        marginLeft: '0.5rem'
+                      }}>{f.status || 'Open'}</span>
                       <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                         {new Date(f.createdAt).toLocaleDateString()}
                       </span>
                     </div>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                      By <span style={{ color: 'var(--primary)', fontWeight: '600' }}>{f.reviewer?.name}</span> ({f.reviewer?.role})
+                    </p>
                     <p style={{ fontSize: '0.9rem' }}>{f.description}</p>
                   </div>
                 ))
