@@ -54,6 +54,7 @@ input, select, textarea, .btn {
   font-size: 0.95rem;
   box-sizing: border-box;
   display: block;
+  margin-bottom: 1rem;
 }
 
 textarea {

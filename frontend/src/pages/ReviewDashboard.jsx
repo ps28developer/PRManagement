@@ -100,7 +100,7 @@ const ReviewDashboard = () => {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                       {pr.findings.map((f, i) => (
                         <div key={i} style={{ 
-                          background: 'rgba(255,255,255,0.03)',
+                          background: 'rgba(255,255,255,0.03)', 
                           padding: '0.75rem', 
                           borderRadius: '0.5rem', 
                           borderLeft: `4px solid ${f.severity === 'Critical' ? '#ef4444' : f.severity === 'High' ? '#f97316' : '#facc15'}`,
