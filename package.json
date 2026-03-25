@@ -1,8 +1,12 @@
 {
   "name": "pr-review-application",
   "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
   "scripts": {
-    "build": "npm --prefix frontend install --no-audit --no-fund && npm --prefix frontend run build"
+    "build": "npm --workspace frontend run build"
   }
 }
 
