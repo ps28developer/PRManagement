@@ -15,6 +15,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/workflow", workflowRoutes);
 
 app.get("/health", (req, res) => res.send("API is running..."));
+app.get("/api/health", (req, res) => res.send("API is running..."));
 
 module.exports = app;
 
